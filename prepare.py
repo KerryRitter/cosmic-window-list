@@ -53,8 +53,7 @@ def prepare(root):
 ''' + source[size_end:]
     (root / path).write_text(source)
 
-    # Filter spinner-only title updates before they reach Iced: even a no-op
-    # application update otherwise submits another frame to the whole panel.
+    # Avoid submitting extra frames for duplicate protocol notifications.
     module_path = 'cosmic-app-list/src/lib.rs'
     module = original(root, module_path)
     marker = 'mod wayland_handler;'

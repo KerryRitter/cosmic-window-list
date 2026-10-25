@@ -5,7 +5,7 @@ use cctk::{
 };
 use std::collections::HashMap;
 
-/// Keep title animations from submitting a new panel frame for every tick.
+/// Forward each window change once, including animated titles.
 #[derive(Default)]
 pub(crate) struct ToplevelUpdates {
     last_sent: HashMap<ExtForeignToplevelHandleV1, ToplevelInfo>,
@@ -14,14 +14,12 @@ pub(crate) struct ToplevelUpdates {
 impl ToplevelUpdates {
     pub(crate) fn filter(&mut self, update: ToplevelUpdate) -> Option<ToplevelUpdate> {
         match update {
-            ToplevelUpdate::Add(mut info) => {
-                stabilize_title(&mut info.title);
+            ToplevelUpdate::Add(info) => {
                 self.last_sent
                     .insert(info.foreign_toplevel.clone(), info.clone());
                 Some(ToplevelUpdate::Add(info))
             }
-            ToplevelUpdate::Update(mut info) => {
-                stabilize_title(&mut info.title);
+            ToplevelUpdate::Update(info) => {
                 if self
                     .last_sent
                     .get(&info.foreign_toplevel)
@@ -38,18 +36,6 @@ impl ToplevelUpdates {
                 Some(ToplevelUpdate::Remove(handle))
             }
         }
-    }
-}
-
-fn stabilize_title(title: &mut String) {
-    // Codex and other terminal tools prefix titles with this braille spinner.
-    // Keep a static busy indicator; only recognize a complete leading token so
-    // ordinary braille text and symbols elsewhere in a title stay untouched.
-    let Some((prefix, _)) = title.split_once(' ') else {
-        return;
-    };
-    if matches!(prefix, "⠋" | "⠙" | "⠹" | "⠸" | "⠼" | "⠴" | "⠦" | "⠧" | "⠇" | "⠏") {
-        title.replace_range(..prefix.len(), "…");
     }
 }
 
@@ -99,16 +85,22 @@ mod tests {
     }
 
     #[test]
-    fn spinner_ticks_do_not_reach_the_ui() {
+    fn spinner_ticks_reach_the_ui_once_each() {
         let mut updates = ToplevelUpdates::default();
         let mut window = info("⠋ Working | project");
         let Some(ToplevelUpdate::Add(added)) = updates.filter(ToplevelUpdate::Add(window.clone()))
         else {
             panic!("new window must be forwarded");
         };
-        assert_eq!(added.title, "… Working | project");
-        for frame in "⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏".chars().cycle().take(100) {
+        assert_eq!(added.title, window.title);
+        for frame in "⠙⠹⠸⠼⠴⠦⠧⠇⠏⠋".chars().cycle().take(100) {
             window.title = format!("{frame} Working | project");
+            let Some(ToplevelUpdate::Update(updated)) =
+                updates.filter(ToplevelUpdate::Update(window.clone()))
+            else {
+                panic!("spinner frame must be forwarded");
+            };
+            assert_eq!(updated.title, window.title);
             assert!(
                 updates
                     .filter(ToplevelUpdate::Update(window.clone()))
@@ -130,9 +122,12 @@ mod tests {
         for original in [
             "", "Terminal", "⠋", "⠋braille", "Text ⠋ spinner", "日本語 🦀", "⠃ braille",
         ] {
-            let mut title = original.to_string();
-            stabilize_title(&mut title);
-            assert_eq!(title, original);
+            let mut updates = ToplevelUpdates::default();
+            let Some(ToplevelUpdate::Add(added)) = updates.filter(ToplevelUpdate::Add(info(original)))
+            else {
+                panic!("new window must be forwarded");
+            };
+            assert_eq!(added.title, original);
         }
     }
 
@@ -144,9 +139,8 @@ mod tests {
         let backend = window.foreign_toplevel.backend().clone();
         let output = WlOutput::inert(backend.clone());
         let workspace = ExtWorkspaceHandleV1::inert(backend);
-        // Each change accompanies a spinner tick, as it can on the desktop.
+        // State changes must propagate even between spinner ticks.
         for change in 0..8 {
-            window.title = "⠙ Working".into();
             match change {
                 0 => {
                     window.state.insert(State::Activated);
