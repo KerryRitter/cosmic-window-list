@@ -53,6 +53,56 @@ def prepare(root):
 ''' + source[size_end:]
     (root / path).write_text(source)
 
+    # Filter spinner-only title updates before they reach Iced: even a no-op
+    # application update otherwise submits another frame to the whole panel.
+    module_path = 'cosmic-app-list/src/lib.rs'
+    module = original(root, module_path)
+    marker = 'mod wayland_handler;'
+    assert module.count(marker) == 1
+    (root / module_path).write_text(module.replace(marker, 'mod toplevel_updates;\n' + marker, 1))
+    (root / 'cosmic-app-list/src/toplevel_updates.rs').write_text((BASE / 'toplevel-updates.rs').read_text())
+    handler_path = 'cosmic-app-list/src/wayland_handler.rs'
+    handler = original(root, handler_path)
+    marker = '    toplevel_info_state: ToplevelInfoState,'
+    assert handler.count(marker) == 1
+    handler = handler.replace(marker, marker + '\n    toplevel_updates: crate::toplevel_updates::ToplevelUpdates,', 1)
+    marker = '        toplevel_info_state: ToplevelInfoState::new(&registry_state, &qh),'
+    assert handler.count(marker) == 1
+    handler = handler.replace(marker, marker + '\n        toplevel_updates: Default::default(),', 1)
+    marker = '// Workspace and toplevel handling'
+    assert handler.count(marker) == 1
+    handler = handler.replace(marker, '''impl AppData {
+    fn send_toplevel_update(&mut self, update: ToplevelUpdate) {
+        if let Some(update) = self.toplevel_updates.filter(update) {
+            let _ = self.tx.unbounded_send(WaylandUpdate::Toplevel(update));
+        }
+    }
+}
+
+''' + marker, 1)
+    replacements = [
+        ('''            let _ = self
+                .tx
+                .unbounded_send(WaylandUpdate::Toplevel(ToplevelUpdate::Add(info.clone())));''',
+         '            self.send_toplevel_update(ToplevelUpdate::Add(info.clone()));'),
+        ('''            let _ = self
+                .tx
+                .unbounded_send(WaylandUpdate::Toplevel(ToplevelUpdate::Update(
+                    info.clone(),
+                )));''',
+         '            self.send_toplevel_update(ToplevelUpdate::Update(info.clone()));'),
+        ('''        let _ = self
+            .tx
+            .unbounded_send(WaylandUpdate::Toplevel(ToplevelUpdate::Remove(
+                toplevel.clone(),
+            )));''',
+         '        self.send_toplevel_update(ToplevelUpdate::Remove(toplevel.clone()));'),
+    ]
+    for before, after in replacements:
+        assert handler.count(before) == 1
+        handler = handler.replace(before, after, 1)
+    (root / handler_path).write_text(handler)
+
     config_path = 'cosmic-app-list/cosmic-app-list-config/src/lib.rs'
     cfg = original(root, config_path).replace('com.system76.CosmicAppList', APP_ID)
     cfg = cfg.replace('    pub enable_drag_source: bool,', '''    pub enable_drag_source: bool,

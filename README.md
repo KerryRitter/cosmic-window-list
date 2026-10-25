@@ -8,6 +8,7 @@ Built for people who want to see and switch between their windows directly.
 ## Features
 
 - **Window titles and icons.** Each window gets a labeled button.
+  Animated terminal title spinners use a static busy indicator to prevent panel flicker.
 - **Adjustable grouping.** Keep up to five windows of an app separate; the sixth
   combines them into a counted button. Change the threshold or turn grouping off.
 - **Window picker.** Click a combined button to select or close an individual window.
@@ -186,6 +187,8 @@ your previous choices. The project checkout can be deleted independently.
 
 - `window-list-view.rs` renders window buttons and applies filtering/grouping.
 - `group-popup.rs` renders the combined-window picker.
+- `toplevel-updates.rs` stabilizes title spinners and filters redundant window updates
+  before they reach the panel renderer.
 - `prepare.py` applies the changes to the pinned upstream source.
 - `settings.py` provides the settings UI and panel-icon configuration.
 - `build.sh` builds the applet; `install.py` installs it for the current user.
@@ -197,6 +200,7 @@ Basic checks:
 python3 -m py_compile prepare.py settings.py install.py
 bash -n build.sh
 bash build.sh
+cargo test --locked --release --manifest-path upstream/Cargo.toml -p cosmic-app-list --lib toplevel_updates::tests
 ```
 
 Live desktop checks covered individual focus/minimize/restore/close, title
