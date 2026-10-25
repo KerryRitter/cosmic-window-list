@@ -1,0 +1,16 @@
+COSMIC Window List
+Copyright (c) 2026 Kerry Ritter
+
+Distributed under GNU GPL version 3 only. See LICENSE.
+
+This project adapts the App Tray from System76's cosmic-applets:
+https://github.com/pop-os/cosmic-applets
+Pinned revision: 63292ab74dc8ef9c8d4e04055047c7671554e937
+The upstream cosmic-app-list code is Copyright 2023 System76 and licensed
+GPL-3.0-only. Its copyright notices remain in the generated upstream checkout.
+The build downloads upstream source and applies the local view and popup
+changes; this repository does not vendor the full upstream source tree.
+
+testing/toplevel-info.xml comes from pop-os/cosmic-protocols. It retains its
+own permissive license and copyright notices within the file. C headers and
+protocol code generated from that file are not committed.
