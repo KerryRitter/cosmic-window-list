@@ -3,6 +3,7 @@
 import argparse
 from pathlib import Path
 import subprocess
+import appearance
 
 APP_ID = 'io.github.kerry.CosmicWindowList'
 BASE = Path(__file__).resolve().parent
@@ -38,6 +39,7 @@ def prepare(root):
     start = source.index("    fn view(&self) -> Element<'_, Message> {")
     end = source.index("    fn view_window(&self, id: window::Id) -> Element<'_, Message> {", start)
     source = source[:start] + (BASE / 'window-list-view.rs').read_text() + '\n' + source[end:]
+    source += '\n' + (BASE / 'window-list-style.rs').read_text()
     marker = "    fn view_window(&self, id: window::Id) -> Element<'_, Message> {"
     source = source.replace(marker, marker + '\n' + (BASE / 'group-popup.rs').read_text(), 1)
     # Use the upstream anchored popup lifecycle, with a compact scrolling list.
@@ -112,6 +114,16 @@ def prepare(root):
             grouping_enabled: true,
             group_after: 5,
             only_current_output: true,''', 1)
+    fields = []
+    defaults = []
+    for key, value in appearance.DEFAULTS.items():
+        rust_type = 'bool' if isinstance(value, bool) else 'u32' if isinstance(value, int) else 'String'
+        fields.append(f'    pub {key}: {rust_type},')
+        literal = appearance.encode(value).strip()
+        if isinstance(value, str): literal += '.to_owned()'
+        defaults.append(f'            {key}: {literal},')
+    cfg = cfg.replace('    pub only_current_output: bool,', '    pub only_current_output: bool,\n' + '\n'.join(fields), 1)
+    cfg = cfg.replace('            only_current_output: true,', '            only_current_output: true,\n' + '\n'.join(defaults), 1)
     (root / config_path).write_text(cfg)
     binary = root / 'cosmic-app-list/src/bin/cosmic-window-list.rs'
     binary.parent.mkdir(parents=True, exist_ok=True)

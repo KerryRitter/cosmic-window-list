@@ -19,6 +19,11 @@ Built for people who want to see and switch between their windows directly.
 - **Overflow scrolling.** Use the mouse wheel when the window list gets crowded.
 - **Panel icon settings.** Show or hide input source, accessibility, tiling,
   Bluetooth, notifications, Workspaces, and Applications buttons.
+- **Appearance controls.** Choose button and hover colors, active colors, borders,
+  corner radius, font, icon size, widths, padding and spacing. Preview normal and
+  active colors, choose the **mxwl** preset, or return to **System** styling.
+- **Panel appearance.** Optionally change the panel background, opacity, size,
+  corner radius, padding and spacing without rearranging its applets.
 
 Right-click a window button to open **Window List Settings**. You can also find
 it by name in the COSMIC launcher. Settings apply immediately and survive restarts.
@@ -131,6 +136,46 @@ multiple monitors can appear on each monitor it occupies.
 Right-click an individual or combined button for settings. With no open windows,
 right-click **No windows**.
 
+### Appearance
+
+Open **Window List Settings → Appearance**. The **mxwl** preset uses the editor's
+charcoal surfaces, green active border, square corners and IBM Plex Mono labels.
+Its colors and dimensions remain editable. Choose **Apply** to save; running
+applets update immediately. **System** restores the default button appearance.
+Keep icons, titles, or both visible. Group counts remain visible with icons alone.
+
+Panel changes are optional: enable **Also update the panel background and
+dimensions** before applying those fields. Panel background accepts `#rrggbb` or
+`ThemeDefault`; panel opacity is a percentage. These controls affect the panel
+named `Panel` on its configured outputs.
+
+Use **Background color** and **Foreground color** for normal window tiles, and
+**Active background color** and **Active foreground color** for the focused
+window. **Panel background color** has a color picker as well as hex input.
+
+The fonts are installed by the companion `mxwl/mxwl-os` project. Fonts fall back
+to an available system font if they are not installed. The applet works with
+your current desktop theme independently of that project.
+
+The compact mxwl preset uses 14 px labels, 6 px horizontal and 2 px vertical tile
+padding and 2 px gaps. Optional panel settings use the smallest (XS) height with
+zero outer padding. All these values are editable in **Appearance**.
+Choosing **Accent color** automatically derives the active tile background and
+text color; you can then adjust those independently. **Machine accent…** opens
+the companion mxwl OS color picker, when installed, for desktop-wide changes.
+
+Command-line equivalents:
+
+```sh
+python3 settings.py --show
+python3 settings.py --preset mxwl
+python3 settings.py --preset mxwl --panel
+python3 settings.py --preset system
+```
+
+Existing grouping, monitor filtering, favorites and panel applets survive preset
+changes. Backups are saved under `~/.local/state/cosmic-backups/` before writes.
+
 ## Update
 
 From the cloned repository:
@@ -157,6 +202,7 @@ Everything installs under your home directory:
 | `~/.local/bin/cosmic-window-list` | Applet executable |
 | `~/.local/bin/cosmic-window-list-settings` | Settings launcher |
 | `~/.local/share/cosmic-window-list/settings.py` | Settings application |
+| `~/.local/share/cosmic-window-list/appearance.py` | Appearance controls and presets |
 | `~/.local/share/applications/io.github.kerry.CosmicWindowList.desktop` | COSMIC applet registration |
 | `~/.local/share/applications/io.github.kerry.CosmicWindowListSettings.desktop` | Settings launcher registration |
 | `~/.config/cosmic/io.github.kerry.CosmicWindowList/v1/` | Applet preferences |
@@ -190,6 +236,8 @@ your previous choices. The project checkout can be deleted independently.
 - `toplevel-updates.rs` filters duplicate window notifications while preserving titles.
 - `prepare.py` applies the changes to the pinned upstream source.
 - `settings.py` provides the settings UI and panel-icon configuration.
+- `appearance.py` defines validated settings and presets shared with the Rust generator.
+- `window-list-style.rs` renders custom button colors, borders and fonts.
 - `build.sh` builds the applet; `install.py` installs it for the current user.
 - `testing/` contains disposable test windows, compositor inspection, and input helpers.
 
@@ -197,6 +245,7 @@ Basic checks:
 
 ```sh
 python3 -m py_compile prepare.py settings.py install.py
+python3 -m unittest discover -s testing -p 'test_*.py'
 bash -n build.sh
 bash build.sh
 cargo test --locked --release --manifest-path upstream/Cargo.toml -p cosmic-app-list --lib toplevel_updates::tests

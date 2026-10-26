@@ -4,6 +4,18 @@ project_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 export PATH="$HOME/.cargo/bin:$PATH"
 if [[ -d "$project_dir/deps/usr/lib/x86_64-linux-gnu/pkgconfig" ]]; then
     export PKG_CONFIG_PATH="$project_dir/deps/usr/lib/x86_64-linux-gnu/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
+    # Extracted development packages must survive moving the project checkout.
+    python3 - "$project_dir/deps/usr" <<'PY'
+from pathlib import Path
+import re
+import sys
+prefix = Path(sys.argv[1])
+for path in (prefix/'lib/x86_64-linux-gnu/pkgconfig').glob('*.pc'):
+    text = path.read_text()
+    updated = re.sub(r'^prefix=.*?/deps/usr$', lambda _: 'prefix='+str(prefix), text, flags=re.M)
+    if text != updated: path.write_text(updated)
+PY
+    export LIBRARY_PATH="$project_dir/deps/usr/lib/x86_64-linux-gnu${LIBRARY_PATH:+:$LIBRARY_PATH}"
 fi
 command -v cargo >/dev/null || { echo 'Missing Rust/Cargo. Install a current Rust toolchain first.' >&2; exit 1; }
 checkout="$project_dir/upstream"

@@ -14,6 +14,8 @@ import argparse
 parser = argparse.ArgumentParser(description='Install COSMIC Window List for the current user.')
 parser.add_argument('--no-enable', action='store_true',
                     help='Install files without changing panel layout or panel icon visibility.')
+parser.add_argument('--preserve-panel-icons', action='store_true',
+                    help='Enable/reload the applet without applying first-install panel icon defaults.')
 args = parser.parse_args()
 
 project = Path(__file__).resolve().parent
@@ -50,6 +52,7 @@ staged.replace(installed)
 settings_file = home / '.local/share/cosmic-window-list/settings.py'
 settings_file.parent.mkdir(parents=True, exist_ok=True)
 shutil.copy2(project/'settings.py', settings_file)
+shutil.copy2(project/'appearance.py', settings_file.with_name('appearance.py'))
 settings_launcher = home / '.local/bin/cosmic-window-list-settings'
 settings_launcher.write_text('#!/bin/sh\nexec /usr/bin/python3 '+shlex.quote(str(settings_file))+' "$@"\n')
 settings_launcher.chmod(0o755)
@@ -57,7 +60,7 @@ settings_desktop = home / '.local/share/applications/io.github.kerry.CosmicWindo
 settings_desktop.parent.mkdir(parents=True, exist_ok=True)
 settings_desktop.write_text(f'''[Desktop Entry]
 Name=Window List Settings
-Comment=Choose window grouping, monitor filtering, and panel icons
+Comment=Style window buttons and panel colors, grouping, monitor filtering, and icons
 Type=Application
 Exec={settings_launcher}
 Icon=preferences-system
@@ -67,7 +70,7 @@ Categories=Settings;DesktopSettings;
 spec=importlib.util.spec_from_file_location('window_list_settings',settings_file)
 settings=importlib.util.module_from_spec(spec)
 spec.loader.exec_module(settings)
-settings.apply_defaults(panel_defaults=not args.no_enable)
+settings.apply_defaults(panel_defaults=not (args.no_enable or args.preserve_panel_icons))
 desktop = home / ".local/share/applications/io.github.kerry.CosmicWindowList.desktop"
 desktop.parent.mkdir(parents=True, exist_ok=True)
 desktop.write_text(f'''[Desktop Entry]

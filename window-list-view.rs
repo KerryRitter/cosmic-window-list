@@ -16,8 +16,11 @@
         let bounds = self.core.applet.suggested_bounds;
         let available = bounds.map(|b| if horizontal { b.width } else { b.height })
             .filter(|n| n.is_finite() && *n > 0.0).unwrap_or(900.0);
-        let button_width = ((available - entries.len() as f32 * 2.0)
-            / entries.len().max(1) as f32).clamp(72.0, 200.0);
+        let gap = self.config.button_gap.min(24) as f32;
+        let min_width = self.config.button_min_width.clamp(32, 400) as f32;
+        let max_width = (self.config.button_max_width.clamp(32, 600) as f32).max(min_width);
+        let button_width = ((available - entries.len() as f32 * gap)
+            / entries.len().max(1) as f32).clamp(min_width, max_width);
         let settings = Message::Exec(format!("{}/.local/bin/cosmic-window-list-settings",
             std::env::var("HOME").unwrap_or_default()), None, false);
         let mut buttons: Vec<Element<'_, Message>> = Vec::new();
@@ -33,17 +36,26 @@
             let action = if grouped {
                 Message::ToplevelListPopup(item.id, self.core.main_window_id().unwrap())
             } else { Message::Toggle(info.foreign_toplevel.clone()) };
-            let content = row![
-                cosmic::widget::icon(fde::IconSource::from_unknown(
-                    item.desktop_info.icon().unwrap_or_default()).as_cosmic_icon()).size(20),
-                text::body(label.clone())
+            let mut content = row![].spacing(6).align_y(Alignment::Center);
+            if self.config.show_icons {
+                content = content.push(cosmic::widget::icon(fde::IconSource::from_unknown(
+                    item.desktop_info.icon().unwrap_or_default()).as_cosmic_icon())
+                    .size(self.config.icon_size.clamp(12, 32) as u16));
+            }
+            if self.config.show_titles || !self.config.show_icons {
+                content = content.push(text::body(label.clone())
+                    .size(self.config.font_size.clamp(9, 24) as u16)
+                    .font(window_list_font(&self.config))
                     .ellipsize(Ellipsize::End(EllipsizeHeightLimit::Lines(1)))
-                    .width(Length::Fill),
-            ].spacing(6).align_y(Alignment::Center);
+                    .width(Length::Fill));
+            } else if grouped {
+                content = content.push(text::body(windows.len().to_string())
+                    .size(self.config.font_size.clamp(9, 24) as u16));
+            }
             let btn = button::custom(content)
-                .padding([4, 6])
+                .padding([self.config.padding_y.min(16) as u16, self.config.padding_x.min(24) as u16])
                 .width(Length::Fixed(if horizontal { button_width } else { 180.0 }))
-                .selected(focused).class(app_list_icon_style(focused)).on_press(action.clone());
+                .selected(focused).class(window_list_style(&self.config, focused)).on_press(action.clone());
             let middle = if grouped { action } else { Message::CloseToplevel(info.foreign_toplevel.clone()) };
             let btn = mouse_area(btn).on_middle_release(middle).on_right_release(settings.clone());
             let btn = if horizontal {
@@ -65,13 +77,13 @@
             buttons.push(mouse_area(text::body("No windows")).on_right_release(settings).into());
         }
         let content: Element<'_, Message> = if horizontal {
-            cosmic::widget::scrollable(row(buttons).spacing(2).align_y(Alignment::Center))
+            cosmic::widget::scrollable(row(buttons).spacing(gap).align_y(Alignment::Center))
                 .id(cosmic::widget::Id::new("window-list-scroll"))
                 .direction(cosmic::iced::widget::scrollable::Direction::Horizontal(
                     cosmic::iced::widget::scrollable::Scrollbar::default(),
                 )).width(Length::Shrink).into()
         } else {
-            cosmic::widget::scrollable(column(buttons).spacing(2)).height(Length::Shrink).into()
+            cosmic::widget::scrollable(column(buttons).spacing(gap)).height(Length::Shrink).into()
         };
         let mut limits = Limits::NONE.min_width(1.0).min_height(1.0);
         if let Some(b) = bounds {

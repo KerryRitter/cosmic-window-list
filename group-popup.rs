@@ -6,9 +6,11 @@
                 for (info, _) in item.toplevels.iter()
                     .filter(|(info, _)| self.is_on_current_monitor_and_workspace(info)) {
                     let activate = button::custom(text::body(info.title.clone())
+                        .size(self.config.font_size.clamp(9, 24) as u16)
+                        .font(window_list_font(&self.config))
                         .ellipsize(Ellipsize::End(EllipsizeHeightLimit::Lines(1))))
                         .padding(10).width(Length::Fill)
-                        .class(Button::AppletMenu)
+                        .class(window_list_style(&self.config, info.state.contains(&State::Activated)))
                         .on_press(Message::Activate(info.foreign_toplevel.clone()));
                     let close = button::custom(icon::from_name("window-close-symbolic").size(16))
                         .padding(8).class(Button::AppletMenu)
