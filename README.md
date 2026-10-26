@@ -74,8 +74,8 @@ cd cosmic-window-list
 bash build.sh
 ```
 
-An authenticated GitHub account with repository access is required while this
-repository is private. You can also clone it with `gh repo clone KerryRitter/cosmic-window-list`.
+This repository is public; GitHub authentication is not required. You can also
+clone it with `gh repo clone KerryRitter/cosmic-window-list`.
 
 The first build downloads the pinned upstream source and Cargo dependencies into
 `upstream/` and compiles a release executable. This can take several minutes.
@@ -153,7 +153,8 @@ Use **Background color** and **Foreground color** for normal window tiles, and
 **Active background color** and **Active foreground color** for the focused
 window. **Panel background color** has a color picker as well as hex input.
 
-The fonts are installed by the companion `mxwl/mxwl-os` project. Fonts fall back
+The fonts are installed by the companion
+[`mxwldev/mxwl-os`](https://github.com/mxwldev/mxwl-os) project. Fonts fall back
 to an available system font if they are not installed. The applet works with
 your current desktop theme independently of that project.
 
