@@ -13,7 +13,7 @@ testing/pointer.json
 testing/pointer-hide
 testing/windows-control.json
 backups/
-screenshots/
+/screenshots/
 test-results.json
 settings-test-results.json
 testing/toplevel-info.c

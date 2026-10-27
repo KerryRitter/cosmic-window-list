@@ -28,6 +28,48 @@ Built for people who want to see and switch between their windows directly.
 Right-click a window button to open **Window List Settings**. You can also find
 it by name in the COSMIC launcher. Settings apply immediately and survive restarts.
 
+## Screenshots
+
+The running panel with the **mxwl** preset and four editable accent colors.
+The highlighted mxwl-editor window is active; Projects and Terminal are inactive.
+These are cropped screenshots of the applet on a COSMIC panel.
+
+| Accent | Running panel |
+| --- | --- |
+| Green | ![Window List tiles with the green mxwl accent](docs/screenshots/panel-green.png) |
+| Sky | ![Window List tiles with a sky blue accent](docs/screenshots/panel-sky.png) |
+| Lavender | ![Window List tiles with a lavender accent](docs/screenshots/panel-lavender.png) |
+| Peach | ![Window List tiles with a peach accent](docs/screenshots/panel-peach.png) |
+
+Choose **mxwl** in **Settings → Appearance**, then edit **Accent color** to
+reproduce these variations. Active text and background colors are derived from
+the accent and can also be adjusted independently.
+
+**Windows and panel icons.** Control grouping, its window-count threshold,
+per-monitor filtering and which COSMIC panel buttons are visible.
+
+<img src="docs/screenshots/settings-windows.png" alt="Window List settings showing grouping, a five-window threshold, monitor filtering and panel icon checkboxes" width="600">
+
+<details>
+<summary>Appearance: presets, fonts and tile dimensions</summary>
+
+Choose System or mxwl styling, show icons and titles, select a font, and adjust
+button widths, label and icon sizes, spacing, padding, borders and corners.
+
+<img src="docs/screenshots/settings-appearance.png" alt="Window List Appearance tab showing presets, font, widths, icon size, padding and border controls" width="600">
+
+</details>
+
+<details>
+<summary>Appearance: tile colors, preview and optional panel styling</summary>
+
+Edit normal and active colors, inspect their preview, and optionally apply a
+panel background, opacity, height, corner radius, padding and spacing.
+
+<img src="docs/screenshots/settings-colors-and-panel.png" alt="Window List color controls, normal and active previews, and enabled panel appearance options" width="600">
+
+</details>
+
 ## Compatibility
 
 Tested on **Pop!_OS 24.04 with COSMIC and Wayland**, on two monitors with different
@@ -163,7 +205,8 @@ padding and 2 px gaps. Optional panel settings use the smallest (XS) height with
 zero outer padding. All these values are editable in **Appearance**.
 Choosing **Accent color** automatically derives the active tile background and
 text color; you can then adjust those independently. **Machine accent…** opens
-the companion mxwl OS color picker, when installed, for desktop-wide changes.
+the companion mxwl OS Appearance settings, when installed, for desktop-wide
+colors, fonts and window appearance.
 
 Command-line equivalents:
 
@@ -258,9 +301,9 @@ group-picker selection, moving windows between monitors, GUI settings changes,
 and preserving preferences across applet reloads.
 
 The input helpers use machine-specific screen coordinates and a temporary uinput
-device. Adapt the coordinates to your layout before using them. Screenshots,
-binaries, downloaded dependencies, backups, and machine-local test results are
-excluded from the repository.
+device. Adapt the coordinates to your layout before using them. README screenshots
+are kept in `docs/screenshots/`; raw captures, binaries, downloaded dependencies,
+backups and machine-local test results are excluded from the repository.
 
 Known limitations: no drag reordering, no distribution package or prebuilt release,
 and compatibility is currently verified only with the pinned COSMIC version.
