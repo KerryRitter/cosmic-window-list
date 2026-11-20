@@ -25,8 +25,9 @@ Built for people who want to see and switch between their windows directly.
 - **Panel appearance.** Optionally change the panel background, opacity, size,
   corner radius, padding and spacing without rearranging its applets.
 
-Right-click a window button to open **Window List Settings**. You can also find
-it by name in the COSMIC launcher. Settings apply immediately and survive restarts.
+Right-click a window button for its window actions. Open **Window List Settings**
+from that menu or by name in the COSMIC launcher. Settings apply immediately and
+survive restarts.
 
 ## Screenshots
 
@@ -175,8 +176,10 @@ monitor's panel. Moving a window between monitors updates the corresponding list
 Minimized windows remain available on their monitor's panel. A window spanning
 multiple monitors can appear on each monitor it occupies.
 
-Right-click an individual or combined button for settings. With no open windows,
-right-click **No windows**.
+Right-click an individual button to focus or restore, minimize, or close that
+window. Right-click a combined button for COSMIC's app menu. With no open windows,
+right-click **No windows** for settings. **Window List Settings** is also available
+in the launcher and in each individual window's context menu.
 
 ### Appearance
 
@@ -277,6 +280,7 @@ your previous choices. The project checkout can be deleted independently.
 
 - `window-list-view.rs` renders window buttons and applies filtering/grouping.
 - `group-popup.rs` renders the combined-window picker.
+- `window-menu.rs` renders actions for the selected window.
 - `toplevel-updates.rs` filters duplicate window notifications while preserving titles.
 - `prepare.py` applies the changes to the pinned upstream source.
 - `settings.py` provides the settings UI and panel-icon configuration.

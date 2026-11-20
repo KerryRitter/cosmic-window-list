@@ -75,7 +75,7 @@ desktop = home / ".local/share/applications/io.github.kerry.CosmicWindowList.des
 desktop.parent.mkdir(parents=True, exist_ok=True)
 desktop.write_text(f'''[Desktop Entry]
 Name=Window List
-Comment=Window buttons with adjustable grouping. Right-click for settings.
+Comment=Window buttons with adjustable grouping and window context menus.
 Type=Application
 Exec={installed}
 Icon=com.system76.CosmicAppList

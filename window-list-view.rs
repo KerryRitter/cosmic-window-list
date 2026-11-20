@@ -24,7 +24,7 @@
         let settings = Message::Exec(format!("{}/.local/bin/cosmic-window-list-settings",
             std::env::var("HOME").unwrap_or_default()), None, false);
         let mut buttons: Vec<Element<'_, Message>> = Vec::new();
-        for (item, windows) in entries {
+        for (index, (item, windows)) in entries.into_iter().enumerate() {
             let grouped = windows.len() > 1;
             let focused = windows.iter().any(|info| info.state.contains(&State::Activated));
             let info = windows[0];
@@ -57,17 +57,23 @@
                 .width(Length::Fixed(if horizontal { button_width } else { 180.0 }))
                 .selected(focused).class(window_list_style(&self.config, focused)).on_press(action.clone());
             let middle = if grouped { action } else { Message::CloseToplevel(info.foreign_toplevel.clone()) };
-            let btn = mouse_area(btn).on_middle_release(middle).on_right_release(settings.clone());
+            let parent = self.core.main_window_id().unwrap();
+            let context = if grouped {
+                Message::Popup(item.id, parent)
+            } else {
+                Message::WindowPopup(item.id, index, info.foreign_toplevel.clone(), parent)
+            };
+            let btn = mouse_area(btn).on_middle_release(middle).on_right_release(context);
             let btn = if horizontal {
                 btn.on_scroll(|delta| Message::ScrollWindows(match delta {
                     cosmic::iced::mouse::ScrollDelta::Lines { x, y } => -(x + y) * 60.0,
                     cosmic::iced::mouse::ScrollDelta::Pixels { x, y } => -(x + y),
                 }))
             } else { btn };
-            let btn: Element<'_, Message> = if grouped {
-                if let Some(tracker) = self.rectangle_tracker.as_ref() {
-                    tracker.container(item.id.into(), btn).into()
-                } else { btn.into() }
+            let btn: Element<'_, Message> = if let Some(tracker) = self.rectangle_tracker.as_ref() {
+                // Separate windows of one app need separate popup anchor rectangles.
+                let key = if grouped { item.id.into() } else { DockItemId::WindowButton(index) };
+                tracker.container(key, btn).into()
             } else { btn.into() };
             buttons.push(self.core.applet.applet_tooltip::<Message>(
                 btn, label, self.popup.is_some(), Message::Surface, None,

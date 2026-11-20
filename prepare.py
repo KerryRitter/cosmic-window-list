@@ -17,7 +17,21 @@ def prepare(root):
     source = source.replace('.and_then(|c| AppListConfig::get_entry(&c).ok())',
                             '.map(|c| AppListConfig::get_entry(&c).unwrap_or_else(|(_, config)| config))', 1)
     source = source.replace('enum Message {', 'enum Message {\n    ScrollWindows(f32),', 1)
+    source = source.replace('pub enum DockItemId {', 'pub enum DockItemId {\n    WindowButton(usize),', 1)
+    source = source.replace('    RightClickMenu,',
+                            '    RightClickMenu,\n    WindowMenu(ExtForeignToplevelHandleV1),', 1)
+    source = source.replace('enum Message {', '''enum Message {
+    WindowPopup(u32, usize, ExtForeignToplevelHandleV1, window::Id),
+    WindowMenuAction(ToplevelRequest),''', 1)
     source = source.replace('        match message {', '''        match message {
+            Message::WindowMenuAction(request) => {
+                if let Some(tx) = self.wayland_sender.as_ref() {
+                    let _ = tx.send(WaylandRequest::Toplevel(request));
+                }
+                if let Some(popup) = self.popup.take() {
+                    return destroy_popup(popup.id);
+                }
+            }
             Message::ScrollWindows(x) => {
                 return cosmic::iced::widget::scrollable::scroll_by(
                     cosmic::widget::Id::new("window-list-scroll"),
@@ -42,6 +56,36 @@ def prepare(root):
     source += '\n' + (BASE / 'window-list-style.rs').read_text()
     marker = "    fn view_window(&self, id: window::Id) -> Element<'_, Message> {"
     source = source.replace(marker, marker + '\n' + (BASE / 'group-popup.rs').read_text(), 1)
+    # Reuse the upstream context-popup lifecycle with a per-window target and anchor.
+    popup_start = source.index('            Message::Popup(id, parent_window_id) => {')
+    popup_end = source.index('            Message::ToplevelListPopup(id, parent_window_id) => {', popup_start)
+    window_popup = source[popup_start:popup_end]
+    for before, after in [
+        ('Message::Popup(id, parent_window_id)', 'Message::WindowPopup(id, index, handle, parent_window_id)'),
+        ('self.rectangles.get(&toplevel_group.id.into())', 'self.rectangles.get(&DockItemId::WindowButton(index))'),
+        ('popup_type: PopupType::RightClickMenu,', 'popup_type: PopupType::WindowMenu(handle.clone()),'),
+    ]:
+        assert window_popup.count(before) == 1
+        window_popup = window_popup.replace(before, after, 1)
+    source = source[:popup_start] + window_popup + source[popup_start:]
+    marker = '                PopupType::RightClickMenu => {'
+    assert source.count(marker) == 1
+    source = source.replace(marker, (BASE / 'window-menu.rs').read_text() + marker, 1)
+    marker = '''                            self.active_list.retain(|t| !t.toplevels.is_empty());
+
+                            if let Some(popup) = &mut self.popup'''
+    assert source.count(marker) == 1
+    source = source.replace(marker, '''                            self.active_list.retain(|t| !t.toplevels.is_empty());
+
+                            // Release the popup grab when its selected window exits.
+                            if self.popup.as_ref().is_some_and(|popup| matches!(
+                                &popup.popup_type, PopupType::WindowMenu(target) if target == &handle
+                            )) {
+                                let popup = self.popup.take().unwrap();
+                                return destroy_popup(popup.id);
+                            }
+
+                            if let Some(popup) = &mut self.popup''', 1)
     # Use the upstream anchored popup lifecycle, with a compact scrolling list.
     group_start = source.index('            Message::ToplevelListPopup(id, parent_window_id) => {')
     copy_start = source.index('                    for (info, _) in &toplevel_group.toplevels {', group_start)
